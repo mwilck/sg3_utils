@@ -686,6 +686,7 @@ sg_read_low(int sg_fd, unsigned char * buff, int blocks, int64_t from_block,
             }
         }
         /* drop through */
+        __attribute__((fallthrough));
     default:
         ++unrecovered_errs;
         if (verbose > 0)
@@ -774,6 +775,7 @@ sg_read(int sg_fd, unsigned char * buff, int blocks, int64_t from_block,
             goto err_out;
         case SG_LIB_CAT_MEDIUM_HARD:
             may_coe = 1;
+            __attribute__((fallthrough));
         default:
             if (retries_tmp > 0) {
                 pr2serr(">>> retrying a sgio read, lba=0x%" PRIx64 "\n",

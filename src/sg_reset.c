@@ -266,6 +266,7 @@ int main(int argc, char * argv[])
             break;
         case EINVAL:
             pr2serr(ME "SG_SCSI_RESET not supported (for value=0x%x)\n", k);
+            __attribute__((fallthrough));
         default:
             perror(ME "SG_SCSI_RESET failed");
             break;

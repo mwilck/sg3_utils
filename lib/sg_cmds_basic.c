@@ -141,6 +141,7 @@ sg_cmds_process_helper(const char * leadin, int mx_di_len, int resid,
     case SG_LIB_CAT_MEDIUM_HARD:
         check_data_in = true;
         /* drop through */
+        __attribute__((fallthrough));
     case SG_LIB_CAT_UNIT_ATTENTION:
     case SG_LIB_CAT_SENSE:
     default:
