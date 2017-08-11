@@ -70,7 +70,7 @@ static const char * version_str = "0.54 20160423";
 
 #define STR_SZ 1024
 #define INOUTF_SZ 512
-#define EBUFF_SZ 512
+#define EBUFF_SZ 1024
 
 #define DEF_BLOCK_SIZE 512
 #define DEF_BLOCKS_PER_TRANSFER 128
