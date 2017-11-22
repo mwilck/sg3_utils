@@ -23,18 +23,20 @@ KERNEL!="sd*[!0-9]|sr*", GOTO="sg3_utils_id_end"
 # Set 'ID_SCSI_INQUIRY=0' in an earlier udev rule if the kernel
 # fails to scan VPD pages correctly; the rules will then fall
 # back to calling sg_vpd directly.
-ENV{ID_SCSI_INQUIRY}!="0", ATTRS=="inquiry", GOTO="sysfs_inquiry"
+ENV{ID_SCSI_INQUIRY}!="0", ATTRS=="inquiry", \
+  ENV{.SCSI_DEVICE}="$root/class/scsi_device/$id/device", \
+  GOTO="sysfs_inquiry"
 GOTO="sg_inquiry"
 
 LABEL="sysfs_inquiry"
 
-IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/inquiry --raw", \
+IMPORT{program}="/usr/bin/sg_inq --export --inhex=$env{.SCSI_DEVICE}/inquiry --raw", \
   ENV{ID_SCSI}="1", ENV{ID_SCSI_INQUIRY}="1"
 # If inquiry sysfs attribute reading it failed, fallback to sg
 ENV{ID_SCSI}!="1", GOTO="sg_inquiry"
 # Read VPD pages 80 (sn) and 83 (di)
-IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/vpd_pg80 --raw"
-IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/vpd_pg83 --raw"
+IMPORT{program}="/usr/bin/sg_inq --export --inhex=$env{.SCSI_DEVICE}/vpd_pg80 --raw"
+IMPORT{program}="/usr/bin/sg_inq --export --inhex=$env{.SCSI_DEVICE}/vpd_pg83 --raw"
 GOTO="compat"
 
 LABEL="sg_inquiry"
