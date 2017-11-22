@@ -5,15 +5,22 @@ ACTION=="remove", GOTO="sg3_utils_id_end"
 # Handle non-SCSI devices that implement SCSI inquiry
 SUBSYSTEM=="block", KERNEL=="cciss*", ENV{DEVTYPE}=="disk", GOTO="sg_inquiry"
 
-SUBSYSTEM!="block", GOTO="sg3_utils_id_end"
 SUBSYSTEMS!="scsi", GOTO="sg3_utils_id_end"
 
 # Import values for partitions
 ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_SCSI"
 ENV{DEVTYPE}=="partition", ENV{ID_SCSI}=="1", IMPORT{parent}="SCSI_*", GOTO="compat"
 
+# type 8 devices are "Medium Changers"
+SUBSYSTEM=="scsi_generic", KERNEL=="sg*[0-9]", ATTRS{type}=="8", \
+  GOTO="try_inquiry"
+SUBSYSTEM=="scsi_tape", KERNEL=="st*[0-9]|nst*[0-9]", \
+  GOTO="try_inquiry"
+
 # Ignore everything else except sd/sr
 KERNEL!="sd*[!0-9]|sr*", GOTO="sg3_utils_id_end"
+
+LABEL="try_inquiry"
 
 # SCSI INQUIRY values
 # If the 'inquiry' sysfs attribute is present the kernel will already
