@@ -2,10 +2,19 @@
 
 ACTION=="remove", GOTO="sg3_utils_id_end"
 
+# Handle non-SCSI devices that implement SCSI inquiry
+SUBSYSTEM=="block", KERNEL=="cciss*", ENV{DEVTYPE}=="disk", GOTO="sg_inquiry"
+
 SUBSYSTEM!="block", GOTO="sg3_utils_id_end"
+SUBSYSTEMS!="scsi", GOTO="sg3_utils_id_end"
 
 # Import values for partitions
-ENV{DEVTYPE}=="partition", IMPORT{parent}="SCSI_*", ENV{ID_SCSI}="1"
+ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_SCSI"
+ENV{DEVTYPE}=="partition", ENV{ID_SCSI}=="1", IMPORT{parent}="SCSI_*", GOTO="compat"
+
+# Ignore everything else except sd/sr
+KERNEL!="sd*[!0-9]|sr*", GOTO="sg3_utils_id_end"
+
 # SCSI INQUIRY values
 # If the 'inquiry' sysfs attribute is present the kernel will already
 # have scanned for VPD pages, so if the vpd page attribute is not
@@ -14,20 +23,27 @@ ENV{DEVTYPE}=="partition", IMPORT{parent}="SCSI_*", ENV{ID_SCSI}="1"
 # Set 'ID_SCSI_INQUIRY=0' in an earlier udev rule if the kernel
 # fails to scan VPD pages correctly; the rules will then fall
 # back to calling sg_vpd directly.
-KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI_INQUIRY}!="?*", IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/inquiry --raw", ENV{ID_SCSI}="1", ENV{ID_SCSI_INQUIRY}="1"
-KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI}!="1", IMPORT{program}="/usr/bin/sg_inq --export $tempnode", ENV{ID_SCSI}="1"
+ENV{ID_SCSI_INQUIRY}!="0", ATTRS=="inquiry", GOTO="sysfs_inquiry"
+GOTO="sg_inquiry"
 
-# Non-SCSI devices that support SCSI inquiry
-KERNEL=="cciss*", ENV{DEVTYPE}=="disk", \
-  IMPORT{program}="/usr/bin/sg_inq --export $tempnode", \
-  ENV{ID_SCSI}="1", ENV{ID_SCSI_INQUIRY}="0"
+LABEL="sysfs_inquiry"
 
-# SCSI EVPD page 0x80 values
-KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI}=="1", ENV{ID_SCSI_INQUIRY}=="1", IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/vpd_pg80 --raw"
-KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI}=="1", ENV{ID_SCSI_INQUIRY}!="1", IMPORT{program}="/usr/bin/sg_inq --export --page=sn $tempnode"
-# SCSI EVPD page 0x83 values
-KERNEL=="sd*[!0-9]", ENV{ID_SCSI}=="1", ENV{ID_SCSI_INQUIRY}=="1", IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/vpd_pg83 --raw"
-KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI}=="1", ENV{ID_SCSI_INQUIRY}!="1", IMPORT{program}="/usr/bin/sg_inq --export --page=di $tempnode"
+IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/inquiry --raw", \
+  ENV{ID_SCSI}="1", ENV{ID_SCSI_INQUIRY}="1"
+# If inquiry sysfs attribute reading it failed, fallback to sg
+ENV{ID_SCSI}!="1", GOTO="sg_inquiry"
+# Read VPD pages 80 (sn) and 83 (di)
+IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/vpd_pg80 --raw"
+IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/vpd_pg83 --raw"
+GOTO="compat"
+
+LABEL="sg_inquiry"
+# Handle devices that have no inquiry attributes in sysfs
+IMPORT{program}="/usr/bin/sg_inq --export $tempnode", ENV{ID_SCSI}="1"
+# Give up if this fails, too
+ENV{ID_SCSI}!="1", GOTO="sg3_utils_id_end"
+IMPORT{program}="/usr/bin/sg_inq --export --page=sn $tempnode"
+IMPORT{program}="/usr/bin/sg_inq --export --page=di $tempnode"
 
 LABEL="compat"
 
