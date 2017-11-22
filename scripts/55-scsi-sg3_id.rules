@@ -16,6 +16,12 @@ ENV{DEVTYPE}=="partition", IMPORT{parent}="SCSI_*", ENV{ID_SCSI}="1"
 # back to calling sg_vpd directly.
 KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI_INQUIRY}!="?*", IMPORT{program}="/usr/bin/sg_inq --export --inhex=/sys/block/$kernel/device/inquiry --raw", ENV{ID_SCSI}="1", ENV{ID_SCSI_INQUIRY}="1"
 KERNEL=="sd*[!0-9]|sr*", ENV{ID_SCSI}!="1", IMPORT{program}="/usr/bin/sg_inq --export $tempnode", ENV{ID_SCSI}="1"
+
+# Non-SCSI devices that support SCSI inquiry
+KERNEL=="cciss*", ENV{DEVTYPE}=="disk", \
+  IMPORT{program}="/usr/bin/sg_inq --export $tempnode", \
+  ENV{ID_SCSI}="1", ENV{ID_SCSI_INQUIRY}="0"
+
 # scsi_id compat mappings
 ENV{SCSI_VENDOR}=="?*", ENV{ID_VENDOR}="$env{SCSI_VENDOR}"
 ENV{SCSI_VENDOR_ENC}=="?*", ENV{ID_VENDOR_ENC}="$env{SCSI_VENDOR_ENC}"
