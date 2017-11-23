@@ -5,7 +5,9 @@ ACTION=="remove", GOTO="sg3_utils_id_end"
 # Handle non-SCSI devices that implement SCSI inquiry
 SUBSYSTEM=="block", KERNEL=="cciss*", ENV{DEVTYPE}=="disk", GOTO="sg_inquiry"
 
-SUBSYSTEMS!="scsi", GOTO="sg3_utils_id_end"
+SUBSYSTEMS=="scsi", GOTO="this_is_scsi"
+GOTO="sg3_utils_id_end"
+LABEL="this_is_scsi"
 
 # Import values for partitions
 ENV{DEVTYPE}=="partition", IMPORT{parent}="ID_SCSI"
