@@ -32,8 +32,8 @@ LABEL="try_inquiry"
 # Set 'ID_SCSI_INQUIRY=0' in an earlier udev rule if the kernel
 # fails to scan VPD pages correctly; the rules will then fall
 # back to calling sg_vpd directly.
-ENV{ID_SCSI_INQUIRY}!="0", ATTRS{inquiry}=="?*", \
-  ENV{.SCSI_DEVICE}="$root/class/scsi_device/$id/device", \
+ENV{ID_SCSI_INQUIRY}!="0", ATTRS{inquiry}=="*", \
+  ENV{.SCSI_DEVICE}="$sys/class/scsi_device/$id/device", \
   GOTO="sysfs_inquiry"
 GOTO="sg_inquiry"
 
